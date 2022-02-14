@@ -3,11 +3,11 @@ import shutil
 import psutil
 
 from PyQt5.QtWidgets import QWidget, QApplication, QMenuBar, \
-    QAction, QFileDialog, qApp
-from PyQt5.QtCore import QSettings
+    QAction, QFileDialog, qApp, QMessageBox
+from PyQt5.QtCore import QSettings, Qt
 from PyQt5 import uic
 
-form = uic.loadUiType("auto_file_delete.ui")[0]
+form = uic.loadUiType("file_auto_delete.ui")[0]
 
 
 def byte_transform(bytes, to, bsize=1024):
@@ -26,6 +26,7 @@ class FileAutoDelete(QWidget, form):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        # self.setWindowFlag(Qt.FramelessWindowHint)
         self.setFixedSize(self.width(), self.height())
 
         drive = []
@@ -43,16 +44,19 @@ class FileAutoDelete(QWidget, form):
 
         self.label.setText(f"{self.comboBox.currentText()}: {byte_transform(self.free, 'GB')} GB")
 
+        self.exit_pushButton.setShortcut('Ctrl+W')
+        self.exit_pushButton.clicked.connect(self.close)
+
         self.value = None
         self.path = None
         self.oldPos = None
 
-        self.menuBar = QMenuBar(self)
-        exitMenu = self.menuBar.addMenu('&File')
-        exitAction = QAction('Exit', self)
-        exitAction.setShortcut("Ctrl+W")
-        exitAction.triggered.connect(qApp.quit)
-        exitMenu.addAction(exitAction)
+        # self.menuBar = QMenuBar(self)
+        # exitMenu = self.menuBar.addMenu('&File')
+        # exitAction = QAction('Exit', self)
+        # exitAction.setShortcut("Ctrl+W")
+        # exitAction.triggered.connect(qApp.quit)
+        # exitMenu.addAction(exitAction)
 
         self.pushButton.clicked.connect(self.btn_click)
 
@@ -83,7 +87,14 @@ class FileAutoDelete(QWidget, form):
             print(old_folder)
 
             try:
-                # shutil.rmtree(old_folder)
+                box = QMessageBox.question(self, 'WARNING', 'Are you sure to delete?',
+                                           QMessageBox.Yes | QMessageBox.No)
+                if box == QMessageBox.Yes:
+                    print('yes')
+                    # shutil.rmtree(old_folder)
+                else:
+                    print('no')
+
                 self.progressBar.setValue(self.progressBar.value() + 1)
             except IndexError:
                 self.complete_lbl.setText('Complete')
