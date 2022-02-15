@@ -4,7 +4,7 @@ import psutil
 
 from PyQt5.QtWidgets import QWidget, QApplication, QMenuBar, \
     QAction, QFileDialog, qApp, QMessageBox
-from PyQt5.QtCore import QSettings, Qt
+from PyQt5.QtCore import QSettings, Qt, QDate
 from PyQt5 import uic
 
 form = uic.loadUiType("file_auto_delete.ui")[0]
@@ -47,6 +47,8 @@ class FileAutoDelete(QWidget, form):
         self.exit_pushButton.setShortcut('Ctrl+W')
         self.exit_pushButton.clicked.connect(self.close)
 
+        self.calendarWidget.clicked[QDate].connect(self.showDate)
+
         self.value = None
         self.path = None
         self.oldPos = None
@@ -87,7 +89,7 @@ class FileAutoDelete(QWidget, form):
             print(old_folder)
 
             try:
-                box = QMessageBox.question(self, 'WARNING', 'Are you sure to delete?',
+                box = QMessageBox.question(self, 'WARNING', f'Are you sure to delete "{old_folder}" folder?',
                                            QMessageBox.Yes | QMessageBox.No)
                 if box == QMessageBox.Yes:
                     print('yes')
@@ -111,7 +113,7 @@ class FileAutoDelete(QWidget, form):
             self.progressBar.setValue(0)
             self.complete_lbl.clear()
             self.path = QFileDialog.getExistingDirectory(self, 'Select directory',
-                                                         directory=f'{self.comboBox.currentText()}:\\')
+                                                         directory=f'{Settings.get("image_save_path")}')
             if self.path:
                 self.delete_oldest_files(self.path, self.spinBox.value())
 
@@ -120,12 +122,16 @@ class FileAutoDelete(QWidget, form):
         else:
             self.complete_lbl.setText('Input storage again')
 
+    def showDate(self, date):
+        print(date.toString('yyyy.MM.dd'))
+
 
 class Settings:
     settings = QSettings('sijung', 'js08')
     defaults = {
         'drive': 'C',
-        'storage': 0
+        'storage': 0,
+        'image_save_path': os.path.join('D:\\JS06', 'image')
     }
 
     @classmethod
