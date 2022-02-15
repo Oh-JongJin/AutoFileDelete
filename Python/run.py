@@ -3,11 +3,11 @@ import shutil
 import psutil
 
 from PyQt5.QtWidgets import QWidget, QApplication, QMenuBar, \
-    QAction, QFileDialog, qApp
-from PyQt5.QtCore import QSettings
+    QAction, QFileDialog, qApp, QMessageBox
+from PyQt5.QtCore import QSettings, Qt, QDate
 from PyQt5 import uic
 
-form = uic.loadUiType("auto_file_delete.ui")[0]
+form = uic.loadUiType("file_auto_delete.ui")[0]
 
 
 def byte_transform(bytes, to, bsize=1024):
@@ -26,6 +26,7 @@ class FileAutoDelete(QWidget, form):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        # self.setWindowFlag(Qt.FramelessWindowHint)
         self.setFixedSize(self.width(), self.height())
 
         drive = []
@@ -43,16 +44,21 @@ class FileAutoDelete(QWidget, form):
 
         self.label.setText(f"{self.comboBox.currentText()}: {byte_transform(self.free, 'GB')} GB")
 
+        self.exit_pushButton.setShortcut('Ctrl+W')
+        self.exit_pushButton.clicked.connect(self.close)
+
+        self.calendarWidget.clicked[QDate].connect(self.showDate)
+
         self.value = None
         self.path = None
         self.oldPos = None
 
-        self.menuBar = QMenuBar(self)
-        exitMenu = self.menuBar.addMenu('&File')
-        exitAction = QAction('Exit', self)
-        exitAction.setShortcut("Ctrl+W")
-        exitAction.triggered.connect(qApp.quit)
-        exitMenu.addAction(exitAction)
+        # self.menuBar = QMenuBar(self)
+        # exitMenu = self.menuBar.addMenu('&File')
+        # exitAction = QAction('Exit', self)
+        # exitAction.setShortcut("Ctrl+W")
+        # exitAction.triggered.connect(qApp.quit)
+        # exitMenu.addAction(exitAction)
 
         self.pushButton.clicked.connect(self.btn_click)
 
@@ -83,7 +89,14 @@ class FileAutoDelete(QWidget, form):
             print(old_folder)
 
             try:
-                # shutil.rmtree(old_folder)
+                box = QMessageBox.question(self, 'WARNING', f'Are you sure to delete "{old_folder}" folder?',
+                                           QMessageBox.Yes | QMessageBox.No)
+                if box == QMessageBox.Yes:
+                    print('yes')
+                    # shutil.rmtree(old_folder)
+                else:
+                    print('no')
+
                 self.progressBar.setValue(self.progressBar.value() + 1)
             except IndexError:
                 self.complete_lbl.setText('Complete')
@@ -100,7 +113,7 @@ class FileAutoDelete(QWidget, form):
             self.progressBar.setValue(0)
             self.complete_lbl.clear()
             self.path = QFileDialog.getExistingDirectory(self, 'Select directory',
-                                                         directory=f'{self.comboBox.currentText()}:\\')
+                                                         directory=f'{Settings.get("image_save_path")}')
             if self.path:
                 self.delete_oldest_files(self.path, self.spinBox.value())
 
@@ -109,12 +122,16 @@ class FileAutoDelete(QWidget, form):
         else:
             self.complete_lbl.setText('Input storage again')
 
+    def showDate(self, date):
+        print(date.toString('yyyy.MM.dd'))
+
 
 class Settings:
     settings = QSettings('sijung', 'js08')
     defaults = {
         'drive': 'C',
-        'storage': 0
+        'storage': 0,
+        'image_save_path': os.path.join('D:\\JS06', 'image')
     }
 
     @classmethod
