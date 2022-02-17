@@ -18,9 +18,6 @@ class FileAutoDelete:
     """
 
     def __init__(self):
-        """
-        initial function
-        """
 
         drive = []
         # Save all of the user's drives in drive variable.
@@ -39,7 +36,7 @@ class FileAutoDelete:
         except ValueError:
             print('Insert only number!!!!!!')
             sys.exit()
-        self.btn_click()
+        self.main()
 
     def byte_transform(self, bytes, to, bsize=1024):
         """
@@ -51,7 +48,7 @@ class FileAutoDelete:
         r = float(bytes)
         for i in range(unit[to]):
             r = r / bsize
-        return float(r)
+        return int(r)
 
     def delete_oldest_files(self, path, minimum_storage_GB: int):
         """
@@ -60,10 +57,11 @@ class FileAutoDelete:
 
         :param path: Path to proceed with a auto-delete
         :param minimum_storage_GB: Minimum storage space desired by the user
+        :return: None
         """
         is_old = {}
 
-        if minimum_storage_GB >= self.byte_transform(self.free, 'GB'):
+        while minimum_storage_GB >= self.byte_transform(self.free, 'GB'):
 
             for f in os.listdir(path):
 
@@ -72,23 +70,28 @@ class FileAutoDelete:
 
             value = list(is_old.values())
             key = {v: k for k, v in is_old.items()}
-            old_folder = key.get(min(value))
+            oldest = key.get(min(value))
 
-            box = input(f'Are you sure to delete "{old_folder}" folder?')
+            box = input(f'Are you sure to delete "{oldest}" folder?')
             if box == "":
                 print('yes')
                 # Main syntax for deleting folders
-                # shutil.rmtree(old_folder)
+                shutil.rmtree(oldest)
             else:
                 print('no')
+                sys.exit()
 
-        else:
-            print('Already you have enough storage.')
+        print('Already you have enough storage.')
 
-    def btn_click(self):
-        # If storage space required is more than current storage space,
+    def main(self):
+        """
+        Delete files by comparing "need_storage" with the current storage space
+
+        :return: None
+        """
+        # If storage space required is more than current storage space
         if self.need_storage >= self.byte_transform(self.free, 'GB'):
-            # diskLabel, 즉 D 드라이브의 vista 폴더 경로를 path 변수에 지정
+            # Specify the Vista folder path of the d drive as a path variable
             self.path = os.path.join(self.diskLabel, 'vista')
             try:
                 self.delete_oldest_files(self.path, self.need_storage)
