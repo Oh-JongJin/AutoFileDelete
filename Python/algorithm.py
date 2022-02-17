@@ -31,18 +31,13 @@ class FileAutoDelete:
         self.diskLabel = 'D://'
         self.total, self.used, self.free = shutil.disk_usage(self.diskLabel)
 
-        # print(f'{self.diskLabel} {self.byte_transform(self.free, "GB")} GB')
-        print(f'Total storage - {self.total}')
-        print(f'Used storage - {self.used}')
-        print(f'Free storage - {self.free}')
-
         self.path = None
 
         try:
             self.need_storage = int(input(f'How much storage space do you want? '
                                           f'(Now you have {self.byte_transform(self.free, "GB")} GB) : '))
         except ValueError:
-            print('Insert only number!!!!!!!!!!!!!')
+            print('Insert only number!!!!!!')
             sys.exit()
         self.btn_click()
 
