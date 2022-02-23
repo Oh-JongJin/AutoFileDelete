@@ -12,24 +12,30 @@ import shutil
 import psutil
 
 
-class FileAutoDelete:
+class AutoFileDelete:
     """
     Delete the oldest folder from the path specified by user
     """
+    drive = []
+    total = ''
+    used = ''
+    free = ''
 
     def __init__(self):
 
-        drive = []
+        self.need_storage = None
+
         # Save all of the user's drives in drive variable.
         for i in range(len(psutil.disk_partitions())):
-            drive.append(str(psutil.disk_partitions()[i])[18:19])
+            AutoFileDelete.drive.append(str(psutil.disk_partitions()[i])[18:19])
 
         # Set the drive as the reference to D
         self.diskLabel = 'D://'
-        self.total, self.used, self.free = shutil.disk_usage(self.diskLabel)
+        AutoFileDelete.total, AutoFileDelete.used, AutoFileDelete.free = shutil.disk_usage(self.diskLabel)
 
         self.path = None
 
+    def start(self):
         try:
             self.need_storage = int(input(f'How much storage space do you want? '
                                           f'(Now you have {self.byte_transform(self.free, "GB")} GB) : '))
@@ -67,6 +73,7 @@ class FileAutoDelete:
 
                 i = os.path.join(path, f)
                 is_old[f'{i}'] = int(os.path.getctime(i))
+                print(i)
 
             value = list(is_old.values())
             key = {v: k for k, v in is_old.items()}
@@ -74,11 +81,10 @@ class FileAutoDelete:
 
             box = input(f'Are you sure to delete "{oldest}" folder?')
             if box == "":
-                print('yes')
                 # Main syntax for deleting folders
-                shutil.rmtree(oldest)
+                # shutil.rmtree(oldest)
+                print(f'{oldest} delete complete.')
             else:
-                print('no')
                 sys.exit()
 
         print('Already you have enough storage.')
@@ -104,4 +110,4 @@ class FileAutoDelete:
 
 if __name__ == "__main__":
 
-    start = FileAutoDelete()
+    start = AutoFileDelete()

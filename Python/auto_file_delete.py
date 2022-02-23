@@ -1,17 +1,27 @@
-import os
-import shutil
-import psutil
+#!/usr/bin/env python3
+#
+# Copyright 2021-2022 9th grade 5th class.
+#
+# Authors:
+#     5jx2oh@gmail.com
 
-from PyQt5.QtWidgets import QWidget, QApplication, QMenuBar, \
-    QAction, QFileDialog, qApp
-from PyQt5.QtCore import QSettings
+import os
+import psutil
+import shutil
+
+from PyQt5.QtWidgets import (QWidget, QApplication, QMenuBar,
+                             QAction, QFileDialog, QMessageBox,
+                             qApp)
+from PyQt5.QtCore import QDate
 from PyQt5 import uic
 
-form = uic.loadUiType("auto_file_delete.ui")[0]
+from settings import AFDSettings
+from algorithm import AutoFileDelete
 
 
 def byte_transform(bytes, to, bsize=1024):
-    """Unit conversion of byte received from shutil
+    """
+    Unit conversion of byte received from shutil
 
     :return: Capacity of the selected unit (int)
     """
@@ -22,45 +32,83 @@ def byte_transform(bytes, to, bsize=1024):
     return int(r)
 
 
-class FileAutoDelete(QWidget, form):
+class FileAutoDelete(QWidget):
+
     def __init__(self):
         super().__init__()
-        self.setupUi(self)
+
+        ui_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                               "auto_file_delete.ui")
+        uic.loadUi(ui_path, self)
+
         self.setFixedSize(self.width(), self.height())
 
         drive = []
+        # Save all of the user's drives in drive variable.
         for i in range(len(psutil.disk_partitions())):
             drive.append(str(psutil.disk_partitions()[i])[18:19])
         self.comboBox.addItems(drive)
-
-        self.comboBox.setCurrentText(Settings.get('drive'))
-        self.spinBox.setValue(Settings.get('storage'))
 
         self.comboBox.currentTextChanged.connect(self.change_combo)
 
         self.diskLabel = f'{self.comboBox.currentText()}:\\'
         self.total, self.used, self.free = shutil.disk_usage(self.diskLabel)
 
-        self.label.setText(f"{self.comboBox.currentText()}: {byte_transform(self.free, 'GB')} GB")
+        self.label.setText(f"{self.comboBox.currentText()}: "
+                           f"{byte_transform(self.free, 'GB')} GB")
+        self.spinBox.setValue(byte_transform(self.free, 'GB') + 100)
 
-        self.value = None
+        # self.dateEdit.setDate(QDate.currentDate())
+        self.calendarWidget.activated.connect(self.showDate)
+
         self.path = None
-        self.oldPos = None
-
-        self.menuBar = QMenuBar(self)
-        exitMenu = self.menuBar.addMenu('&File')
-        exitAction = QAction('Exit', self)
-        exitAction.setShortcut("Ctrl+W")
-        exitAction.triggered.connect(qApp.quit)
-        exitMenu.addAction(exitAction)
+        self.date = None
 
         self.pushButton.clicked.connect(self.btn_click)
+        self.exit_pushButton.clicked.connect(self.exit_click)
+
+    def exit_click(self):
+        sys.exit()
+
+    def showDate(self, date):
+        self.date = date.toString('yyMMdd')
+        self.check_file_date(r'D:\JS06\image\vista')    # JS06Setting.get('image_save_path')
 
     def change_combo(self, value):
         self.total, self.used, self.free = shutil.disk_usage(f'{value}:\\')
         self.label.setText(f"{value}: {byte_transform(self.free, 'GB')} GB")
+        self.spinBox.setValue(byte_transform(self.free, 'GB') + 100)
 
-    def delete_oldest_files(self, path, minimum_storage_GB: int):
+    def check_file_date(self, path: str):
+        is_old = []
+
+        for f in os.listdir(path):
+            if int(f) <= int(self.date):
+                is_old.append(int(f))
+
+        if is_old:
+            dlg = QMessageBox.question(self, 'Warning', f'Delete {is_old} folder?',
+                                       QMessageBox.Yes | QMessageBox.No)
+            if dlg == QMessageBox.Yes:
+                print('DELETE!!')
+                self.delete_select_date(path, is_old)
+        else:
+            QMessageBox.information(self, 'Information', 'There is no data before the selected date.')
+
+    def delete_select_date(self, path: str, folder: list):
+        """
+        Delete the list containing the folder name
+
+        :param path: Path to proceed with a auto-delete
+        :param folder: Data older than the date selected as the calendarWidget
+        """
+
+        for i in range(len(folder)):
+            a = os.path.join(path, str(folder[i]))
+            # shutil.rmtree(a)
+            print(f'{a} delete complete.')
+
+    def delete_oldest_files(self, path: str, minimum_storage_GB=100):
         """
         The main function of this Program
         Find oldest file and proceed with deletion
@@ -73,7 +121,6 @@ class FileAutoDelete(QWidget, form):
         if minimum_storage_GB >= byte_transform(self.free, 'GB'):
 
             for f in os.listdir(path):
-
                 i = os.path.join(path, f)
                 is_old[f'{i}'] = int(os.path.getctime(i))
 
@@ -104,34 +151,13 @@ class FileAutoDelete(QWidget, form):
             if self.path:
                 self.delete_oldest_files(self.path, self.spinBox.value())
 
-            Settings.set('drive', self.comboBox.currentText())
-            Settings.set('storage', self.spinBox.value())
+            AFDSettings.set('drive', self.comboBox.currentText())
+            AFDSettings.set('storage', self.spinBox.value())
         else:
             self.complete_lbl.setText('Input storage again')
 
 
-class Settings:
-    settings = QSettings('sijung', 'js08')
-    defaults = {
-        'drive': 'C',
-        'storage': 0
-    }
-
-    @classmethod
-    def set(cls, key, value):
-        cls.settings.setValue(key, value)
-
-    @classmethod
-    def get(cls, key):
-        return cls.settings.value(
-            key,
-            cls.defaults[key],
-            type(cls.defaults[key])
-        )
-
-
 if __name__ == "__main__":
-
     import sys
 
     app = QApplication(sys.argv)
