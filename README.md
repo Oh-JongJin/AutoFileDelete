@@ -33,6 +33,12 @@ Required Python packages that can be installed using `pip`:
 - python >= 3.8
 - PyQt5 >= 5.13
 
+```bash
+> python file_auto_delete.py
+```
+
+
+
 #### Ubuntu 20.04
 
 You can install most of the prerequisites using Ubuntu package manager, apt.
