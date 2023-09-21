@@ -4,7 +4,7 @@ import psutil
 
 from PyQt5.QtWidgets import QWidget, QApplication, QMenuBar, \
     QAction, QFileDialog, qApp
-from PyQt5.QtCore import QSettings
+from PyQt5.QtCore import QSettings, Qt
 from PyQt5 import uic
 
 form = uic.loadUiType("auto_file_delete.ui")[0]
@@ -47,12 +47,12 @@ class FileAutoDelete(QWidget, form):
         self.path = None
         self.oldPos = None
 
-        self.menuBar = QMenuBar(self)
-        exitMenu = self.menuBar.addMenu('&File')
-        exitAction = QAction('Exit', self)
-        exitAction.setShortcut("Ctrl+W")
-        exitAction.triggered.connect(qApp.quit)
-        exitMenu.addAction(exitAction)
+        # self.menuBar = QMenuBar(self)
+        # exitMenu = self.menuBar.addMenu('&File')
+        # exitAction = QAction('Exit', self)
+        # exitAction.setShortcut("Ctrl+W")
+        # exitAction.triggered.connect(qApp.quit)
+        # exitMenu.addAction(exitAction)
 
         self.pushButton.clicked.connect(self.btn_click)
 
@@ -80,10 +80,12 @@ class FileAutoDelete(QWidget, form):
             value = list(is_old.values())
             key = {v: k for k, v in is_old.items()}
             old_folder = key.get(min(value))
+            old_folder = os.path.dirname(os.path.abspath(old_folder))
             print(old_folder)
+            # sys.exit()
 
             try:
-                # shutil.rmtree(old_folder)
+                shutil.rmtree(old_folder)
                 self.progressBar.setValue(self.progressBar.value() + 1)
             except IndexError:
                 self.complete_lbl.setText('Complete')
@@ -108,6 +110,12 @@ class FileAutoDelete(QWidget, form):
             Settings.set('storage', self.spinBox.value())
         else:
             self.complete_lbl.setText('Input storage again')
+
+    def keyPressEvent(self, event):
+        if event.modifiers() & Qt.ControlModifier:
+            if event.key() == Qt.Key_W:
+                self.close()
+                sys.exit()
 
 
 class Settings:
